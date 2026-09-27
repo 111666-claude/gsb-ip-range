@@ -16,14 +16,21 @@ def build_parser():
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
-    try:
-        ranges = [parse_range(text) for text in args.add]
-        merged = merge(ranges)
-    except (RangeError, ValueError) as error:
-        print("错误：%s" % error, file=sys.stderr)
-        return 1
+    ranges = []
+    for index, text in enumerate(args.add, 1):
+        try:
+            ranges.append(parse_range(text))
+        except RangeError as error:
+            print("错误：第 %d 个 --add：%s" % (index, error.message), file=sys.stderr)
+            return 1
+    merged = merge(ranges)
     if args.contains is not None:
-        print("yes" if contains(merged, args.contains) else "no")
+        try:
+            hit = contains(merged, args.contains)
+        except ValueError:
+            print("错误：--contains 的地址非法：%r" % args.contains, file=sys.stderr)
+            return 1
+        print("yes" if hit else "no")
     if args.list or args.contains is None:
         for item in merged:
             print(format_range(item))
